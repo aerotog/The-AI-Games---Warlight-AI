@@ -37,6 +37,7 @@ class Bot(object):
 
                 # End of file check
                 if len(rawline) == 0:
+                    stderr.write("End of file!")
                     break
 
                 line = rawline.strip()
@@ -46,12 +47,17 @@ class Bot(object):
                     continue
 
                 parts = line.split()
+                #stderr.write("Got commands!")
 
                 command = parts[0]
 
                 # All different commands besides the opponents' moves
                 if command == 'settings':
                     self.update_settings(parts[1:])
+
+                # opponent_moves can be ignored
+                elif command == 'opponent_moves':
+                    continue
 
                 elif command == 'setup_map':
                     self.setup_map(parts[1:])
@@ -227,9 +233,13 @@ class Bot(object):
             neighbours = list(region.neighbours)
             while len(neighbours) > 0:
                 target_region = neighbours[Random.randrange(0, len(neighbours))]
-                if region.owner != target_region.owner and region.troop_count > 6:
-                    attack_transfers.append([region.id, target_region.id, 5])
-                    region.troop_count -= 5
+                army_size = region.troop_count - 1
+                if target_region.owner == 'neutral' and region.troop_count > 3:
+                    attack_transfers.append([region.id, target_region.id, army_size])
+                    region.troop_count -= army_size
+                elif region.owner != target_region.owner and region.troop_count > 6 and region.troop_count > 2 * target_region.troop_count:
+                    attack_transfers.append([region.id, target_region.id, army_size])
+                    region.troop_count -= army_size
                 elif region.owner == target_region.owner and region.troop_count > 1:
                     attack_transfers.append([region.id, target_region.id, region.troop_count - 1])
                     region.troop_count = 1

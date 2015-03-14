@@ -233,11 +233,16 @@ class Bot(object):
             neighbours = list(region.neighbours)
 
             for neighbour in neighbours:
+                army_size = region.troop_count - 1
                 if neighbour.owner == 'neutral' and region.troop_count > 3:
                     attack_transfers.append([region.id, neighbour.id, 3])
                     region.troop_count -= 3
+                elif region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
+                    attack_transfers.append([region.id, neighbour.id, army_size])
+                    region.troop_count -= army_size
 
 
+            '''
             while len(neighbours) > 0:
                 target_region = neighbours[Random.randrange(0, len(neighbours))]
                 army_size = region.troop_count - 1
@@ -249,6 +254,7 @@ class Bot(object):
                     region.troop_count = 1
                 else:
                     neighbours.remove(target_region)
+            '''
         
         if len(attack_transfers) == 0:
             return 'No moves'

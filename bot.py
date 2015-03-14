@@ -65,8 +65,8 @@ class Bot(object):
                 elif command == 'update_map':
                     self.update_map(parts[1:])
 
-                elif command == 'pick_starting_regions':
-                    stdout.write(self.pick_starting_regions(parts[2:]) + '\n')
+                elif command == 'pick_starting_region':
+                    stdout.write(self.pick_starting_region(parts[2:]) + '\n')
                     stdout.flush()
 
                 elif command == 'go':
@@ -97,8 +97,16 @@ class Bot(object):
         '''
         Method to update game settings at the start of a new game.
         '''
-        key, value = options
-        self.settings[key] = value
+        # New settings give starting regions to look at plus bonus settings
+        
+        if len(options) == 2:
+            key, value = options
+            self.settings[key] = value
+        else:
+            pre_pick_starting_region = options[1:]
+            
+            
+
 
     def setup_map(self, options):
         '''
@@ -154,7 +162,7 @@ class Bot(object):
             region.owner = options[i + 1]
             region.troop_count = int(options[i + 2])
             
-    def pick_starting_regions(self, options):
+    def pick_starting_region(self, options):
         '''
         Method to select our initial starting regions.
         
@@ -162,7 +170,9 @@ class Bot(object):
         '''
         shuffled_regions = Random.shuffle(Random.shuffle(options))
         
-        return ' '.join(shuffled_regions[:6])
+        #return ' '.join(shuffled_regions[:6])
+        #return ' '.join(shuffled_regions[0])
+        return shuffled_regions[0]
 
     def place_troops(self):
         '''
@@ -188,7 +198,7 @@ class Bot(object):
                 for neighbour in neighbours:
                     if troops_remaining == 0:
                         break
-                    elif neighbour.owner == 'neutral' and reg.troop_count < 4:
+                    elif neighbour.owner == 'neutral' and neighbour.troop_count == 2 and reg.troop_count < 4:
                         diff = 4 - reg.troop_count
 
                         if troops_remaining >= diff:
@@ -201,7 +211,7 @@ class Bot(object):
 
                             reg.troop_count += troops_remaining
                             troops_remaining -= troops_remaining
-                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2:
+                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2 and neighbour.owner != 'neutral':
                         placements.append([reg.id, troops_remaining])
 
                         reg.troop_count += troops_remaining
@@ -245,7 +255,7 @@ class Bot(object):
             for neighbour in neighbours:
                 army_size = region.troop_count - 1
                 # Attack neutrals with 3 army if possible
-                if neighbour.owner == 'neutral' and region.troop_count > 3:
+                if neighbour.owner == 'neutral' and neighbour.troop_count == 2 and region.troop_count > 3:
                     attack_transfers.append([region.id, neighbour.id, 3])
                     region.troop_count -= 3
                 # Attack enemy if more than double their army

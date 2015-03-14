@@ -262,12 +262,25 @@ class Bot(object):
                 elif region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
                     attack_transfers.append([region.id, neighbour.id, army_size])
                     region.troop_count -= army_size
+                # Attack with all adjacent armies if > 2x enemy army
+                elif region.owner != neighbour.owner:
+                    sum_adjacent_friendlies = 0
+                    nns = list(neighbour.neighbours)
+                    for nn in nns:
+                        if nn.owner == region.owner:
+                            sum_adjacent_friendlies += nn.troop_count - 1
+                    if sum_adjacent_friendlies > neighbour.troop_count * 2:
+                        for nn in nns:
+                            if nn.owner == region.owner and nn.troop_count > 1:
+                                attack_transfers.append([nn.id, neighbour.id, nn.troop_count - 1])
+                                nn.troop_count = 1
                 # Move friendly troops without enemy adjacency to region adjacent to enemy
-                elif region.owner == neighbour.owner and  any(n.owner != region.owner for n in neighbours):
+                elif region.owner == neighbour.owner and  any(n.owner == 'player2' for n in neighbours):
                     nns = list(neighbour.neighbours)
                     if all((nn.owner == region.owner) or (nn.owner == 'neutral') for nn in nns) and neighbour.troop_count > 1:
                         attack_transfers.append([neighbour.id, region.id, neighbour.troop_count - 1])
                         neighbour.troop_count = 1
+
 
 
 

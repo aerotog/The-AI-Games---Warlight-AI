@@ -69,6 +69,10 @@ class Bot(object):
                     stdout.write(self.pick_starting_region(parts[2:]) + '\n')
                     stdout.flush()
 
+                elif command == 'pick_starting_regions':
+                    stdout.write(self.pick_starting_regions(parts[2:]) + '\n')
+                    stdout.flush()
+
                 elif command == 'go':
 
                     sub_command = parts[1]
@@ -173,6 +177,18 @@ class Bot(object):
         #return ' '.join(shuffled_regions[:6])
         #return ' '.join(shuffled_regions[0])
         return shuffled_regions[0]
+
+    def pick_starting_regions(self, options):
+        '''
+        Method to select our initial starting regions.
+        
+        Currently selects six random regions.
+        '''
+        shuffled_regions = Random.shuffle(Random.shuffle(options))
+        
+        return ' '.join(shuffled_regions[:6])
+        #return ' '.join(shuffled_regions[0])
+        #return shuffled_regions[0]
 
     def place_troops(self):
         '''

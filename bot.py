@@ -182,9 +182,13 @@ class Bot(object):
         while troops_remaining:
 
             for reg in shuffled_regions:
+                if troops_remaining == 0:
+                    break
                 neighbours = list(reg.neighbours)
                 for neighbour in neighbours:
-                    if neighbour.owner == 'neutral' and reg.troop_count < 4:
+                    if troops_remaining == 0:
+                        break
+                    elif neighbour.owner == 'neutral' and reg.troop_count < 4:
                         diff = 4 - reg.troop_count
 
                         if troops_remaining >= diff:

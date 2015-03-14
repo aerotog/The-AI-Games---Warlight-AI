@@ -186,6 +186,7 @@ class Bot(object):
                 for neighbour in neighbours:
                     if neighbour.owner == 'neutral' and reg.troop_count < 4:
                         diff = 4 - reg.troop_count
+
                         if troops_remaining >= diff:
                             placements.append([reg.id, diff])
 
@@ -196,6 +197,11 @@ class Bot(object):
 
                             reg.troop_count += troops_remaining
                             troops_remaining -= troops_remaining
+                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2:
+                        placements.append([reg.id, troops_remaining])
+
+                        reg.troop_count += troops_remaining
+                        troops_remaining -= troops_remaining
 
             region = shuffled_regions[region_index]
             

@@ -265,7 +265,7 @@ class Bot(object):
                 # Move friendly troops without enemy adjacency to region adjacent to enemy
                 elif region.owner == neighbour.owner and  any(n.owner != region.owner for n in neighbours):
                     nns = list(neighbour.neighbours)
-                    if all(nn.owner == region.owner for nn in nns) and neighbour.troop_count > 1:
+                    if all((nn.owner == region.owner) or (nn.owner == 'neutral') for nn in nns) and neighbour.troop_count > 1:
                         attack_transfers.append([neighbour.id, region.id, neighbour.troop_count - 1])
                         neighbour.troop_count = 1
 

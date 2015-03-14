@@ -244,12 +244,22 @@ class Bot(object):
 
             for neighbour in neighbours:
                 army_size = region.troop_count - 1
+                # Attack neutrals with 3 army if possible
                 if neighbour.owner == 'neutral' and region.troop_count > 3:
                     attack_transfers.append([region.id, neighbour.id, 3])
                     region.troop_count -= 3
+                # Attack enemy if more than double their army
                 elif region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
                     attack_transfers.append([region.id, neighbour.id, army_size])
                     region.troop_count -= army_size
+                # Move friendly troops without enemy adjacency to region adjacent to enemy
+                elif region.owner == neighbour.owner and  any(n.owner != region.owner for n in neighbours):
+                    nns = list(neighbour.neighbours)
+                    if all(nn.owner == region.owner for nn in nns) and neighbour.troop_count > 1:
+                        attack_transfers.append([neighbour.id, region.id, neighbour.troop_count - 1])
+                        neighbour.troop_count = 1
+
+
 
 
             '''

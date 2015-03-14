@@ -231,13 +231,17 @@ class Bot(object):
         
         for region in owned_regions:
             neighbours = list(region.neighbours)
+
+            for neighbour in neighbours:
+                if neighbour.owner == 'neutral' and region.troop_count > 3:
+                    attack_transfers.append([region.id, neighbour.id, 3])
+                    region.troop_count -= 3
+
+
             while len(neighbours) > 0:
                 target_region = neighbours[Random.randrange(0, len(neighbours))]
                 army_size = region.troop_count - 1
-                if target_region.owner == 'neutral' and region.troop_count > 3:
-                    attack_transfers.append([region.id, target_region.id, army_size])
-                    region.troop_count -= army_size
-                elif region.owner != target_region.owner and region.troop_count > 6 and region.troop_count > 2 * target_region.troop_count:
+                if region.owner != target_region.owner and region.troop_count > 6 and army_size > target_region.troop_count * 2:
                     attack_transfers.append([region.id, target_region.id, army_size])
                     region.troop_count -= army_size
                 elif region.owner == target_region.owner and region.troop_count > 1:

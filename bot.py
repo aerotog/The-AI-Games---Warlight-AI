@@ -175,20 +175,20 @@ class Bot(object):
 
         while troops_remaining:
 
-            for region in shuffled_regions:
-                neighbours = list(region.neighbours)
+            for reg in shuffled_regions:
+                neighbours = list(reg.neighbours)
                 for neighbour in neighbours:
-                    if neighbour.owner == 'neutral':
-                        diff = 4 - region.troop_count
+                    if neighbour.owner == 'neutral' and reg.troop_count < 4:
+                        diff = 4 - reg.troop_count
                         if troops_remaining >= diff:
-                            placements.append([region.id, diff])
+                            placements.append([reg.id, diff])
 
                             reg.troop_count += diff
                             troops_remaining -= diff
                         else:
-                            placements.append([region.id, troops_remaining])
+                            placements.append([reg.id, troops_remaining])
 
-                            region.troop_count += troops_remaining
+                            reg.troop_count += troops_remaining
                             troops_remaining -= troops_remaining
 
             region = shuffled_regions[region_index]

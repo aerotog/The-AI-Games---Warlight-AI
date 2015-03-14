@@ -169,10 +169,27 @@ class Bot(object):
         troops_remaining = int(self.settings['starting_armies'])
         
         owned_regions = self.map.get_owned_regions(self.settings['your_bot'])
-        duplicated_regions = owned_regions * (3 + int(troops_remaining / 2))
-        shuffled_regions = Random.shuffle(duplicated_regions)
-        
+        #duplicated_regions = owned_regions * (3 + int(troops_remaining / 2))
+        #shuffled_regions = Random.shuffle(duplicated_regions)
+        shuffled_regions = Random.shuffle(owned_regions)
+
         while troops_remaining:
+
+            for reg in shuffled_regions:
+                for idnum in reg.neighbours:
+                    if get_region_by_id(idnum) in get_owned_regions('neutral'):
+                        if reg.troop_count < 4:
+                            diff = 4 - reg.troop_count
+                            if troops_remaining >= diff:
+                                placements.append([reg.id, diff])
+
+                                reg.troop_count += diff
+                                troops_remaining -= diff
+                            else:
+                                placements.append([region.id, troops_remaining])
+
+                                region.troop_count += troops_remaining
+                                troops_remaining -= troops_remaining
 
             region = shuffled_regions[region_index]
             
@@ -183,7 +200,7 @@ class Bot(object):
                 region.troop_count += 2
                 troops_remaining -= 2
                 
-            else:
+            elif troops_remaining == 1:
 
                  placements.append([region.id, 1])
 

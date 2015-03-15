@@ -272,10 +272,38 @@ class Bot(object):
         
         owned_regions = self.map.get_owned_regions(self.settings['your_bot'])
         
+        # ATTACKING
         for region in owned_regions:
             neighbours = list(region.neighbours)
             army_size = region.troop_count - 1
 
+            # Focus on weak neutrals
+            for neighbour in neighbours:                
+                # Attack neutrals with 3 army if possible
+                if neighbour.owner == 'neutral' and neighbour.troop_count == 2 and region.troop_count > 3:
+                    if all(n.owner != 'player2' for n in neighbours):
+                        attack_transfers.append([region.id, neighbour.id, 3])
+                        region.troop_count -= 3
+
+        for region in owned_regions:
+            neighbours = list(region.neighbours)
+            army_size = region.troop_count - 1
+
+            for neighbour in neighbours:
+                # Attack enemy if more than double their army
+                if region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
+                    if neighbour.owner != 'neutral':
+                        attack_transfers.append([region.id, neighbour.id, army_size])
+                        region.troop_count -= army_size
+                    elif all(n.owner != 'player2' for n in neighbours):
+                        attack_transfers.append([region.id, neighbour.id, army_size])
+                        region.troop_count -= army_size     
+
+
+        for region in owned_regions:
+            neighbours = list(region.neighbours)
+            army_size = region.troop_count - 1
+            
             for neighbour in neighbours:
                 # Attack with all adjacent armies if > 2x enemy army
                 if region.owner != neighbour.owner and neighbour.owner != 'neutral':
@@ -292,24 +320,10 @@ class Bot(object):
                         attack_transfers.append([region.id, neighbour.id, army_size])
                         region.troop_count -= army_size
 
-            for neighbour in neighbours:
-                # Attack enemy if more than double their army
-                if region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
-                    if neighbour.owner != 'neutral':
-                        attack_transfers.append([region.id, neighbour.id, army_size])
-                        region.troop_count -= army_size
-                    elif all(n.owner != 'player2' for n in neighbours):
-                        attack_transfers.append([region.id, neighbour.id, army_size])
-                        region.troop_count -= army_size
-
-            # Focus on weak neutrals
-            for neighbour in neighbours:                
-                # Attack neutrals with 3 army if possible
-                if neighbour.owner == 'neutral' and neighbour.troop_count == 2 and region.troop_count > 3:
-                    if all(n.owner != 'player2' for n in neighbours):
-                        attack_transfers.append([region.id, neighbour.id, 3])
-                        region.troop_count -= 3
-               
+        # MOVING
+        for region in owned_regions:
+            neighbours = list(region.neighbours)
+            army_size = region.troop_count - 1
             
             for neighbour in neighbours:
                 # Move friendly troops without enemy adjacency to region adjacent to enemy

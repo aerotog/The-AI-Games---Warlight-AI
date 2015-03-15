@@ -325,7 +325,7 @@ class Bot(object):
             
             for neighbour in neighbours:
                 # Attack with all adjacent armies if > 2x enemy army
-                if region.owner != neighbour.owner and neighbour.owner != 'neutral':
+                if region.owner != neighbour.owner:
                     sum_adjacent_friendlies = army_size
                     nns = list(neighbour.neighbours)
                     for nn in nns:

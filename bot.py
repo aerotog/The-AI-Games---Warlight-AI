@@ -206,8 +206,7 @@ class Bot(object):
         #shuffled_regions = Random.shuffle(duplicated_regions)
         shuffled_regions = Random.shuffle(owned_regions)
 
-        while troops_remaining:
-            
+        while troops_remaining:            
 
             for reg in shuffled_regions:
                 if troops_remaining == 0:
@@ -246,32 +245,36 @@ class Bot(object):
                             troops_remaining -= troops_remaining
 
             for reg in shuffled_regions: 
+                if troops_remaining == 0:
+                    break
                 if neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2 and neighbour.owner != 'neutral':
                     placements.append([reg.id, troops_remaining])
                     reg.troop_count += troops_remaining
                     troops_remaining -= troops_remaining  
 
-            
-            region = shuffled_regions[region_index]
-            
-            if troops_remaining > 1:
-
-                placements.append([region.id, 2])
-
-                region.troop_count += 2
-                troops_remaining -= 2
+            for reg in shuffled_regions:
+                if troops_remaining == 0:
+                    break
+                region = shuffled_regions[region_index]
                 
-            elif troops_remaining == 1:
+                if troops_remaining > 1:
 
-                 placements.append([region.id, 1])
+                    placements.append([region.id, 2])
 
-                 region.troop_count += 1
-                 troops_remaining -= 1
+                    region.troop_count += 2
+                    troops_remaining -= 2
+                    
+                elif troops_remaining == 1:
 
-            region_index += 1
+                     placements.append([region.id, 1])
 
-            if region_index == len(shuffled_regions):
-                region_index = 0
+                     region.troop_count += 1
+                     troops_remaining -= 1
+
+                region_index += 1
+
+                if region_index == len(shuffled_regions):
+                    region_index = 0
 
           
         return ', '.join(['%s place_armies %s %d' % (self.settings['your_bot'], placement[0],
@@ -297,7 +300,7 @@ class Bot(object):
             for neighbour in neighbours:                
                 # Attack neutrals with 3 army if possible
                 if neighbour.owner == 'neutral' and neighbour.troop_count == 2 and region.troop_count > 3:
-                    if all(n.owner != update_settings.settings['opponent_bot'] for n in neighbours):
+                    if all(n.owner != self.settings['opponent_bot'] for n in neighbours):
                         stderr.write("ATTACKING WEAK NEUTRAL ") 
                         attack_transfers.append([region.id, neighbour.id, 3])
                         region.troop_count -= 3
@@ -313,7 +316,7 @@ class Bot(object):
                         stderr.write("ATTACKING NEUTRAL ") 
                         attack_transfers.append([region.id, neighbour.id, army_size])
                         region.troop_count = 1
-                    elif all(n.owner != update_settings.settings['opponent_bot'] for n in neighbours):
+                    elif all(n.owner != self.settings['opponent_bot'] for n in neighbours):
                         stderr.write("ATTACKING ENEMY ") 
                         attack_transfers.append([region.id, neighbour.id, army_size])
                         region.troop_count = 1     
@@ -329,12 +332,12 @@ class Bot(object):
                     sum_adjacent_friendlies = army_size
                     nns = list(neighbour.neighbours)
                     for nn in nns:
-                        if nn.owner == region.owner and nn.troop_count > 4:
+                        if nn.owner == region.owner and nn.troop_count > 2:
                             sum_adjacent_friendlies += nn.troop_count - 1
                     if sum_adjacent_friendlies > neighbour.troop_count * 2:
                         stderr.write("TAG TEAM ENEMY ") 
                         for nn in nns:
-                            if nn.owner == region.owner and nn.troop_count > 4:
+                            if nn.owner == region.owner and nn.troop_count > 2:
                                 attack_transfers.append([nn.id, neighbour.id, nn.troop_count - 1])
                                 nn.troop_count = 1
                         attack_transfers.append([region.id, neighbour.id, army_size])
@@ -347,7 +350,7 @@ class Bot(object):
             
             for neighbour in neighbours:
                 # Move friendly troops without enemy adjacency to region adjacent to enemy
-                if region.owner == neighbour.owner and  any(n.owner == update_settings.settings['opponent_bot'] for n in neighbours):
+                if region.owner == neighbour.owner and  any(n.owner == self.settings['opponent_bot'] for n in neighbours):
                     nns = list(neighbour.neighbours)
                     if all((nn.owner == region.owner) or (nn.owner == 'neutral') for nn in nns) and neighbour.troop_count > 1:
                         stderr.write("REINFORCEMENT MOVE ") 

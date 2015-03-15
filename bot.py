@@ -108,6 +108,7 @@ class Bot(object):
             self.settings[key] = value
         else:
             pre_pick_starting_region = options[1:]
+
             
             
 
@@ -217,23 +218,32 @@ class Bot(object):
                         break
                     elif neighbour.owner == 'neutral' and neighbour.troop_count == 2 and reg.troop_count < 4:
                         diff = 4 - reg.troop_count
-
                         if troops_remaining >= diff:
                             placements.append([reg.id, diff])
-
                             reg.troop_count += diff
                             troops_remaining -= diff
                         else:
                             placements.append([reg.id, troops_remaining])
 
                             reg.troop_count += troops_remaining
-                            troops_remaining -= troops_remaining
-            
-                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2 and neighbour.owner != 'neutral':
-                        placements.append([reg.id, troops_remaining])
+                            troops_remaining -= troops_remaining    
 
-                        reg.troop_count += troops_remaining
-                        troops_remaining -= troops_remaining
+                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2 and neighbour.owner != 'neutral':
+                        placements.append([reg.id, int(troops_remaining/2)])
+                        reg.troop_count += int(troops_remaining/2)
+                        troops_remaining -= int(troops_remaining/2)
+
+                    elif neighbour.owner == 'neutral' and neighbour.troop_count == 6 and reg.troop_count < 13:
+                        diff = 13 - reg.troop_count
+
+                        if troops_remaining >= diff:
+                            placements.append([reg.id, diff])
+                            reg.troop_count += diff
+                            troops_remaining -= diff
+                        else:
+                            placements.append([reg.id, troops_remaining])
+                            reg.troop_count += troops_remaining
+                            troops_remaining -= troops_remaining
 
             
             region = shuffled_regions[region_index]
@@ -257,7 +267,7 @@ class Bot(object):
             if region_index == len(shuffled_regions):
                 region_index = 0
 
-            
+          
         return ', '.join(['%s place_armies %s %d' % (self.settings['your_bot'], placement[0],
             placement[1]) for placement in placements])
 
@@ -281,7 +291,8 @@ class Bot(object):
             for neighbour in neighbours:                
                 # Attack neutrals with 3 army if possible
                 if neighbour.owner == 'neutral' and neighbour.troop_count == 2 and region.troop_count > 3:
-                    if all(n.owner != 'player2' for n in neighbours):
+                    if all(n.owner != update_settings.settings['opponent_bot'] for n in neighbours):
+                        stderr.write("ATTACKING WEAK NEUTRAL ") 
                         attack_transfers.append([region.id, neighbour.id, 3])
                         region.troop_count -= 3
 
@@ -293,11 +304,13 @@ class Bot(object):
                 # Attack enemy if more than double their army
                 if region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
                     if neighbour.owner != 'neutral':
+                        stderr.write("ATTACKING NEUTRAL ") 
                         attack_transfers.append([region.id, neighbour.id, army_size])
-                        region.troop_count -= army_size
-                    elif all(n.owner != 'player2' for n in neighbours):
+                        region.troop_count = 1
+                    elif all(n.owner != update_settings.settings['opponent_bot'] for n in neighbours):
+                        stderr.write("ATTACKING ENEMY ") 
                         attack_transfers.append([region.id, neighbour.id, army_size])
-                        region.troop_count -= army_size     
+                        region.troop_count = 1     
 
 
         for region in owned_regions:
@@ -313,12 +326,13 @@ class Bot(object):
                         if nn.owner == region.owner and nn.troop_count > 4:
                             sum_adjacent_friendlies += nn.troop_count - 1
                     if sum_adjacent_friendlies > neighbour.troop_count * 2:
+                        stderr.write("TAG TEAM ENEMY ") 
                         for nn in nns:
                             if nn.owner == region.owner and nn.troop_count > 4:
                                 attack_transfers.append([nn.id, neighbour.id, nn.troop_count - 1])
                                 nn.troop_count = 1
                         attack_transfers.append([region.id, neighbour.id, army_size])
-                        region.troop_count -= army_size
+                        region.troop_count = 1
 
         # MOVING
         for region in owned_regions:
@@ -327,9 +341,10 @@ class Bot(object):
             
             for neighbour in neighbours:
                 # Move friendly troops without enemy adjacency to region adjacent to enemy
-                if region.owner == neighbour.owner and  any(n.owner == 'player2' for n in neighbours):
+                if region.owner == neighbour.owner and  any(n.owner == update_settings.settings['opponent_bot'] for n in neighbours):
                     nns = list(neighbour.neighbours)
                     if all((nn.owner == region.owner) or (nn.owner == 'neutral') for nn in nns) and neighbour.troop_count > 1:
+                        stderr.write("REINFORCEMENT MOVE ") 
                         attack_transfers.append([neighbour.id, region.id, neighbour.troop_count - 1])
                         neighbour.troop_count = 1
             
@@ -351,7 +366,8 @@ class Bot(object):
         
         if len(attack_transfers) == 0:
             return 'No moves'
-        
+
+         
         return ', '.join(['%s attack/transfer %s %s %s' % (self.settings['your_bot'], attack_transfer[0],
             attack_transfer[1], attack_transfer[2]) for attack_transfer in attack_transfers])
 

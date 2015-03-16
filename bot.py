@@ -214,9 +214,23 @@ class Bot(object):
                 neighbours = list(reg.neighbours)
                 for neighbour in neighbours:
                     if troops_remaining == 0:
-                        break
+                        break 
+            
+                    # Put troops to fight enemy
+                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2 and neighbour.owner != 'neutral':
+                        diff = neighbour.troop_count * 2 - reg.troop_count
+                        if troops_remaining > diff:
+                            placements.append([reg.id, diff])
+                            reg.troop_count += diff
+                            troops_remaining -= diff
+                        else:
+                            placements.append([reg.id, troops_remaining])
+                            reg.troop_count += troops_remaining
+                            troops_remaining -= troops_remaining
+
+                    # Puts troops to fight neutrals
                     elif neighbour.owner == 'neutral' and neighbour.troop_count == 2 and reg.troop_count < 4:
-                        diff = 4 - reg.troop_count
+                        diff = neighbour.troop_count * 2 - reg.troop_count
                         if troops_remaining >= diff:
                             placements.append([reg.id, diff])
                             reg.troop_count += diff
@@ -225,15 +239,11 @@ class Bot(object):
                             placements.append([reg.id, troops_remaining])
 
                             reg.troop_count += troops_remaining
-                            troops_remaining -= troops_remaining    
+                            troops_remaining -= troops_remaining  
 
-                    elif neighbour.owner != reg.owner and reg.troop_count < neighbour.troop_count * 2 and neighbour.owner != 'neutral':
-                        placements.append([reg.id, int(troops_remaining/2)])
-                        reg.troop_count += int(troops_remaining/2)
-                        troops_remaining -= int(troops_remaining/2)
-
+                    # Put troops to fight big neutral
                     elif neighbour.owner == 'neutral' and neighbour.troop_count == 6 and reg.troop_count < 13:
-                        diff = 13 - reg.troop_count
+                        diff = neighbour.troop_count * 2 - reg.troop_count
 
                         if troops_remaining >= diff:
                             placements.append([reg.id, diff])
@@ -290,6 +300,7 @@ class Bot(object):
         attack_transfers = []
         
         owned_regions = self.map.get_owned_regions(self.settings['your_bot'])
+        enemy = self.settings['opponent_bot']
         
         # ATTACKING
         for region in owned_regions:
@@ -300,7 +311,7 @@ class Bot(object):
             for neighbour in neighbours:                
                 # Attack neutrals with 3 army if possible
                 if neighbour.owner == 'neutral' and neighbour.troop_count == 2 and region.troop_count > 3:
-                    if all(n.owner != self.settings['opponent_bot'] for n in neighbours):
+                    if all(n.owner != enemy for n in neighbours):
                         stderr.write("ATTACKING WEAK NEUTRAL ") 
                         attack_transfers.append([region.id, neighbour.id, 3])
                         region.troop_count -= 3
@@ -313,11 +324,11 @@ class Bot(object):
                 # Attack enemy if more than double their army
                 if region.owner != neighbour.owner and army_size > neighbour.troop_count * 2:
                     if neighbour.owner != 'neutral':
-                        stderr.write("ATTACKING NEUTRAL ") 
+                        stderr.write("ATTACKING ENEMY ") 
                         attack_transfers.append([region.id, neighbour.id, army_size])
                         region.troop_count = 1
-                    elif all(n.owner != self.settings['opponent_bot'] for n in neighbours):
-                        stderr.write("ATTACKING ENEMY ") 
+                    elif all(n.owner != enemy for n in neighbours):
+                        stderr.write("ATTACKING NEUTRAL ") 
                         attack_transfers.append([region.id, neighbour.id, army_size])
                         region.troop_count = 1     
 
@@ -335,13 +346,29 @@ class Bot(object):
                         if nn.owner == region.owner and nn.troop_count > 2:
                             sum_adjacent_friendlies += nn.troop_count - 1
                     if sum_adjacent_friendlies > neighbour.troop_count * 2:
-                        stderr.write("TAG TEAM ENEMY ") 
-                        for nn in nns:
-                            if nn.owner == region.owner and nn.troop_count > 2:
-                                attack_transfers.append([nn.id, neighbour.id, nn.troop_count - 1])
-                                nn.troop_count = 1
-                        attack_transfers.append([region.id, neighbour.id, army_size])
-                        region.troop_count = 1
+                        if neighbour.owner != 'neutral':
+                            stderr.write("TAG TEAM ENEMY ") 
+                            for nn in nns:
+                                if nn.owner == region.owner and nn.troop_count > 2:
+                                    attack_transfers.append([nn.id, neighbour.id, nn.troop_count - 1])
+                                    nn.troop_count = 1
+                            attack_transfers.append([region.id, neighbour.id, army_size])
+                            region.troop_count = 1
+
+                        # Only tag team a neutral if there are no enemy around    
+                        elif neighbour.owner == 'neutral':
+                            #nns = list(neighbour.neighbours)
+                            if all(((nn.owner == region.owner) or (nn.owner == 'neutral')) for nn in nns):
+                                stderr.write("TAG TEAM NEUTAL ") 
+                                for nn in nns:
+                                    if nn.owner == region.owner and nn.troop_count > 2:
+                                        attack_transfers.append([nn.id, neighbour.id, nn.troop_count - 1])
+                                        nn.troop_count = 1
+                                attack_transfers.append([region.id, neighbour.id, army_size])
+                                region.troop_count = 1
+
+
+
 
         # MOVING
         for region in owned_regions:
@@ -350,9 +377,9 @@ class Bot(object):
             
             for neighbour in neighbours:
                 # Move friendly troops without enemy adjacency to region adjacent to enemy
-                if region.owner == neighbour.owner and  any(n.owner == self.settings['opponent_bot'] for n in neighbours):
+                if region.owner == neighbour.owner and  any(n.owner != region.owner for n in neighbours):
                     nns = list(neighbour.neighbours)
-                    if all((nn.owner == region.owner) or (nn.owner == 'neutral') for nn in nns) and neighbour.troop_count > 1:
+                    if all((nn.owner != enemy) for nn in nns) and neighbour.troop_count > 1:
                         stderr.write("REINFORCEMENT MOVE ") 
                         attack_transfers.append([neighbour.id, region.id, neighbour.troop_count - 1])
                         neighbour.troop_count = 1
